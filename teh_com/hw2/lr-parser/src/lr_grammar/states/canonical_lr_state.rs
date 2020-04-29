@@ -54,26 +54,6 @@ impl LRState for CanonicalLRState {
         }
     }
 
-    fn all_states<G: GrammarInfo>(from: Self, info: &G) -> Vec<Self> {
-        let symbols = info.symbols();
-
-        let mut states = BTreeSet::new();
-        let mut q = VecDeque::new();
-        states.insert(from.clone());
-        q.push_back(from);
-    
-        while !q.is_empty() {
-            let first = q.pop_front().unwrap();
-            for &symbol in &symbols {
-                let new_state = first.go_to(symbol, info);
-                if states.insert(new_state.clone()) {
-                    q.push_back(new_state);
-                }
-            }
-        }
-        states.into_iter().collect()
-    }
-
     fn go_to<G: GrammarInfo>(&self, sym: Symbol, info: &G) -> Self {
         let mut new_sprods = BTreeSet::new();
         for sprod in &self.sprods {
@@ -188,7 +168,7 @@ mod tests {
         let grammar = Grammar::build(init_nonterm, productions.clone());
     }
 
-    use super::super::lr_grammar::LRGrammar;
+    use crate::lr_grammar::LRGrammar;
     #[test]
     fn parse_1() {
         // The grammar:
@@ -237,5 +217,53 @@ mod tests {
         assert_eq!(parser.parse(b"acccc"), true);
         assert_eq!(parser.parse(b"a"), true);
         assert_eq!(parser.parse(b"c"), false);
+    }
+
+    #[test]
+    fn parse_3() {
+        // The grammar:
+        // S -> Aa
+        // S -> bAc
+        // S -> dc
+        // S -> bda
+        // A -> d
+        let productions = vec![
+            Production { s: 0, b: vec![Symbol::Nonterm(1), Symbol::Term(b'a')] },
+            Production { s: 0, b: vec![Symbol::Term(b'b'), Symbol::Nonterm(1), Symbol::Term(b'c')] },
+            Production { s: 0, b: vec![Symbol::Term(b'd'), Symbol::Term(b'c')] },
+            Production { s: 0, b: vec![Symbol::Term(b'b'), Symbol::Term(b'd'), Symbol::Term(b'a')] },
+            Production { s: 1, b: vec![Symbol::Term(b'd')] }
+        ];
+        let init_nonterm = 0;
+        let parser: LRGrammar<CanonicalLRState> = LRGrammar::build(init_nonterm, productions)
+            .expect("Should be an LR(1) grammar");
+        assert_eq!(parser.parse(b"da"), true);
+        assert_eq!(parser.parse(b"aa"), false);
+        assert_eq!(parser.parse(b"bdc"), true);
+    }
+
+    #[test]
+    fn parse4() {
+        // The grammar:
+        // E -> E + T
+        // E -> T
+        // T -> T * F
+        // T -> F
+        // F -> n
+        let productions = vec![
+            Production { s: 0, b: vec![Symbol::Nonterm(0), Symbol::Term(b'+'), Symbol::Nonterm(1)] },
+            Production { s: 0, b: vec![Symbol::Nonterm(1)] },
+            Production { s: 1, b: vec![Symbol::Nonterm(1), Symbol::Term(b'*'), Symbol::Nonterm(2)] },
+            Production { s: 1, b: vec![Symbol::Nonterm(2)] },
+            Production { s: 2, b: vec![Symbol::Term(b'n')] },
+        ];
+        let init_nonterm = 0;
+        let parser: LRGrammar<CanonicalLRState> = LRGrammar::build(init_nonterm, productions)
+            .expect("Should be LR(1)");
+        assert_eq!(parser.parse(b"n*n*n"), true);
+        assert_eq!(parser.parse(b"n+n+n"), true);
+        assert_eq!(parser.parse(b"n+n*n+n*n"), true);
+        assert_eq!(parser.parse(b"n+n*"), false);
+        assert_eq!(parser.parse(b"n+*n"), false);
     }
 }

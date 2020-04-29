@@ -1,5 +1,6 @@
 pub mod types;
 pub mod helpers;
+pub mod states;
 
 use std::collections::BTreeMap;
 
@@ -79,6 +80,7 @@ impl<S: LRState> LRGrammar<S> {
     pub fn parse(&self, mut input: &[u8]) -> bool {
         let mut stack = Vec::new();
         stack.push((self.init_state.clone(), Symbol::Term(b' ')));
+        println!("{}", String::from_utf8(input.to_vec()).unwrap());
         loop {
             let top_state = stack.last().unwrap().0.clone();
             let next_input = if input.is_empty() { b'$' } else { input[0] };
@@ -88,6 +90,7 @@ impl<S: LRState> LRGrammar<S> {
                     &Move::Shift(ref state_added) => {
                         stack.push((state_added.clone(), Symbol::Term(next_input)));
                         if next_input == b'$' {
+                            println!();
                             return true
                         } else {
                             input = &input[1..];
@@ -104,11 +107,17 @@ impl<S: LRState> LRGrammar<S> {
                             .0
                             .go_to(Symbol::Nonterm(prod.s), &self.grammar);
                         stack.push((state_added, Symbol::Nonterm(prod.s)));
+
+                        let stack_symbols = stack
+                        .iter()
+                        .skip(1)
+                        .map(|&(_, sym)| sym)
+                        .collect::<Vec<_>>();
+                        println!("{}{}", stack_format(&stack_symbols), String::from_utf8(input.to_vec()).unwrap());
                     }
                 },
-                None => return false,
+                None => { println!(); return false; },
             }
-            println!("{:?}", stack.iter().map(|&(_, sym)| sym).collect::<Vec<_>>());
         }
     }
 
@@ -119,4 +128,15 @@ impl<S: LRState> LRGrammar<S> {
     pub fn get_states(&self) -> Vec<S> {
         self.states.clone()
     }
+}
+
+fn stack_format(stack: &[Symbol]) -> String {
+    let mut res = String::new();
+    for s in stack {
+        match *s {
+            Symbol::Term(t) => res.push(t as char),
+            Symbol::Nonterm(t) => res.push((b'A' + (t as u8)) as char),
+        }
+    }
+    res
 }

@@ -1,4 +1,3 @@
-pub mod canonical_lr_state;
 pub mod lr_grammar;
 pub mod grammar;
 
