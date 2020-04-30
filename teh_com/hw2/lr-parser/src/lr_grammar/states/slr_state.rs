@@ -139,10 +139,10 @@ mod tests {
         let init_nonterm = 0;
         let parser: LRGrammar<SLRState> = LRGrammar::build(init_nonterm, productions)
             .expect("Should be SLR(1)");
-        assert_eq!(parser.parse(b"n*n*n"), true);
-        assert_eq!(parser.parse(b"n+n+n"), true);
-        assert_eq!(parser.parse(b"n+n*n+n*n"), true);
-        assert_eq!(parser.parse(b"n+n*"), false);
-        assert_eq!(parser.parse(b"n+*n"), false);
+        assert!(parser.parse(b"n*n*n").is_some());
+        assert!(parser.parse(b"n+n+n").is_some());
+        assert!(parser.parse(b"n+n*n+n*n").is_some());
+        assert!(parser.parse(b"n+n*").is_none());
+        assert!(parser.parse(b"n+*n").is_none());
     }
 }

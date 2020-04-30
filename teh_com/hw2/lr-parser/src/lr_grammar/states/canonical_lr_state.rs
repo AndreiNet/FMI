@@ -150,24 +150,6 @@ mod tests {
         ]);
     }
 
-    #[test]
-    fn action_1() {
-        // The grammar:
-        // S -> AB
-        // A -> a
-        // B -> Cb
-        // C -> c | #
-        let productions = vec![
-            Production { s: 0, b: vec![Symbol::Nonterm(1), Symbol::Nonterm(2)] },
-            Production { s: 1, b: vec![Symbol::Term(b'a')] },
-            Production { s: 2, b: vec![Symbol::Nonterm(3), Symbol::Term(b'b')] },
-            Production { s: 3, b: vec![Symbol::Term(b'c')] },
-            Production { s: 3, b: vec![]},
-        ];
-        let init_nonterm = 0;
-        let grammar = Grammar::build(init_nonterm, productions.clone());
-    }
-
     use crate::lr_grammar::LRGrammar;
     #[test]
     fn parse_1() {
@@ -187,12 +169,12 @@ mod tests {
         
         let parser: LRGrammar<CanonicalLRState> = LRGrammar::build(init_nonterm, productions)
             .expect("Should be an LR(1) grammar");
-        assert_eq!(parser.parse(b"acb"), true);
-        assert_eq!(parser.parse(b"ab"), true);
-        assert_eq!(parser.parse(b"a"), false);
-        assert_eq!(parser.parse(b"b"), false);
-        assert_eq!(parser.parse(b"c"), false);
-        assert_eq!(parser.parse(b"ac"), false);
+        assert!(parser.parse(b"acb").is_some());
+        assert!(parser.parse(b"ab").is_some());
+        assert!(parser.parse(b"a").is_none());
+        assert!(parser.parse(b"b").is_none());
+        assert!(parser.parse(b"c").is_none());
+        assert!(parser.parse(b"ac").is_none());
     }
 
     #[test]
@@ -214,9 +196,9 @@ mod tests {
         let init_nonterm = 0;
         let parser: LRGrammar<CanonicalLRState> = LRGrammar::build(init_nonterm, productions)
             .expect("Should be an LR(1) grammar");
-        assert_eq!(parser.parse(b"acccc"), true);
-        assert_eq!(parser.parse(b"a"), true);
-        assert_eq!(parser.parse(b"c"), false);
+        assert!(parser.parse(b"acccc").is_some());
+        assert!(parser.parse(b"a").is_some());
+        assert!(parser.parse(b"c").is_none());
     }
 
     #[test]
@@ -237,9 +219,9 @@ mod tests {
         let init_nonterm = 0;
         let parser: LRGrammar<CanonicalLRState> = LRGrammar::build(init_nonterm, productions)
             .expect("Should be an LR(1) grammar");
-        assert_eq!(parser.parse(b"da"), true);
-        assert_eq!(parser.parse(b"aa"), false);
-        assert_eq!(parser.parse(b"bdc"), true);
+        assert!(parser.parse(b"da").is_some());
+        assert!(parser.parse(b"aa").is_none());
+        assert!(parser.parse(b"bdc").is_some());
     }
 
     #[test]
@@ -260,10 +242,10 @@ mod tests {
         let init_nonterm = 0;
         let parser: LRGrammar<CanonicalLRState> = LRGrammar::build(init_nonterm, productions)
             .expect("Should be LR(1)");
-        assert_eq!(parser.parse(b"n*n*n"), true);
-        assert_eq!(parser.parse(b"n+n+n"), true);
-        assert_eq!(parser.parse(b"n+n*n+n*n"), true);
-        assert_eq!(parser.parse(b"n+n*"), false);
-        assert_eq!(parser.parse(b"n+*n"), false);
+        assert!(parser.parse(b"n*n*n").is_some());
+        assert!(parser.parse(b"n+n+n").is_some());
+        assert!(parser.parse(b"n+n*n+n*n").is_some());
+        assert!(parser.parse(b"n+n*").is_none());
+        assert!(parser.parse(b"n+*n").is_none());
     }
 }

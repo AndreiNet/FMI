@@ -77,9 +77,11 @@ impl<S: LRState> LRGrammar<S> {
         })
     }
 
-    pub fn parse(&self, mut input: &[u8]) -> bool {
+    pub fn parse(&self, mut input: &[u8]) -> Option<Vec<Vec<Symbol>>> {
         let mut stack = Vec::new();
         stack.push((self.init_state.clone(), Symbol::Term(b' ')));
+        let mut result = Vec::new();
+        result.push(input.iter().map(|&c| Symbol::Term(c)).collect());
         println!("{}", String::from_utf8(input.to_vec()).unwrap());
         loop {
             let top_state = stack.last().unwrap().0.clone();
@@ -90,8 +92,8 @@ impl<S: LRState> LRGrammar<S> {
                     &Move::Shift(ref state_added) => {
                         stack.push((state_added.clone(), Symbol::Term(next_input)));
                         if next_input == b'$' {
-                            println!();
-                            return true
+                            result.reverse();
+                            return Some(result);
                         } else {
                             input = &input[1..];
                         }
@@ -108,15 +110,16 @@ impl<S: LRState> LRGrammar<S> {
                             .go_to(Symbol::Nonterm(prod.s), &self.grammar);
                         stack.push((state_added, Symbol::Nonterm(prod.s)));
 
-                        let stack_symbols = stack
-                        .iter()
-                        .skip(1)
-                        .map(|&(_, sym)| sym)
-                        .collect::<Vec<_>>();
-                        println!("{}{}", stack_format(&stack_symbols), String::from_utf8(input.to_vec()).unwrap());
+                        let mut stack_symbols = stack
+                            .iter()
+                            .skip(1)
+                            .map(|&(_, sym)| sym)
+                            .collect::<Vec<_>>();
+                        stack_symbols.extend(input.iter().map(|&c| Symbol::Term(c)));
+                        result.push(stack_symbols);
                     }
                 },
-                None => { println!(); return false; },
+                None => { return None },
             }
         }
     }
@@ -128,15 +131,4 @@ impl<S: LRState> LRGrammar<S> {
     pub fn get_states(&self) -> Vec<S> {
         self.states.clone()
     }
-}
-
-fn stack_format(stack: &[Symbol]) -> String {
-    let mut res = String::new();
-    for s in stack {
-        match *s {
-            Symbol::Term(t) => res.push(t as char),
-            Symbol::Nonterm(t) => res.push((b'A' + (t as u8)) as char),
-        }
-    }
-    res
 }
