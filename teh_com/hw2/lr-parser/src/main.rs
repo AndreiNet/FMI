@@ -11,6 +11,7 @@ use grammar::types::{Nonterm, Term, Production, Symbol};
 
 fn read_grammar(input: &str) -> (Vec<Production>, Vec<String>) {
     let mut nonterms = HashMap::new();
+    nonterms.insert("S'".to_string(), 0);
     let mut get_index = |s: String| -> usize {
         if !nonterms.contains_key(&s) {
             let index = nonterms.len();
